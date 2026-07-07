@@ -1,4 +1,4 @@
-# 🎙️ Transcritor de Áudio
+# 🎙️ transcribeThis
 
 Um aplicativo simples para transcrever áudios e vídeos manualmente — como uma
 reunião, entrevista, aula ou podcast — direto na sua tela, sem precisar
