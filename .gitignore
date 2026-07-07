@@ -1,0 +1,34 @@
+# Dependências Node.js
+node_modules/
+
+# Saída de build/empacotamento (Electron)
+release/
+dist/
+out/
+
+# Saída de build (Tauri, caso implementado futuramente)
+src-tauri/target/
+
+# Saída de build (Neutralino, caso implementado futuramente)
+.tmp/
+resources.neu
+bin/
+
+# Segredos de secure storage (docs/01-electron.md, 02-tauri.md, 03-neutralino.md)
+secrets.bin
+vault.hold
+*.key
+.env
+
+# Logs
+npm-debug.log*
+*.log
+
+# Arquivos de SO
+.DS_Store
+Thumbs.db
+
+# Arquivos de editor/IDE
+.vscode/
+.idea/
+*.swp
