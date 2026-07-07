@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎙️ transcribeThis</title>
+    
+    <!-- Favicon SVG (melhor qualidade, escalável) -->
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    
+    <!-- Favicon alternativo inline para compatibilidade -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%230f62fe'/%3E%3Cpath d='M50 25c-8 0-14 6-14 14v12c0 8 6 14 14 14s14-6 14-14V39c0-8-6-14-14-14zm0 35c-5 0-9-4-9-9V39c0-5 4-9 9-9s9 4 9 9v12c0 5-4 9-9 9z' fill='white'/%3E%3Cpath d='M65 51c0 8-7 15-15 15s-15-7-15-15h-5c0 10 8 18 18 20v9h4v-9c10-2 18-10 18-20h-5z' fill='white'/%3E%3C/svg%3E">
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%230f62fe'/%3E%3Cpath d='M50 25c-8 0-14 6-14 14v12c0 8 6 14 14 14s14-6 14-14V39c0-8-6-14-14-14zm0 35c-5 0-9-4-9-9V39c0-5 4-9 9-9s9 4 9 9v12c0 5-4 9-9 9z' fill='white'/%3E%3Cpath d='M65 51c0 8-7 15-15 15s-15-7-15-15h-5c0 10 8 18 18 20v9h4v-9c10-2 18-10 18-20h-5z' fill='white'/%3E%3C/svg%3E">
+    
+    <!-- Cor do tema (barra de endereço mobile) -->
+    <meta name="theme-color" content="#0f62fe">
+    
+    <!-- Descrição para SEO -->
+    <meta name="description" content="Transcritor de áudio com IA - Transcreva áudios e vídeos automaticamente com Whisper AI">
+    
+    <!-- Google Fonts - JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Carbon Design System -->
+    <link href="https://unpkg.com/carbon-components@10.58.0/css/carbon-components.min.css" rel="stylesheet">
+    
+    <!-- CodeMirror -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="light-theme">
+    
+    <!-- Tela de Carregamento -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-content">
+            <div class="loading-icon">🎙️</div>
+            <h1 class="loading-title">transcribeThis</h1>
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Carregando aplicação...</p>
+        </div>
+    </div>
+
+    <!-- Tela de Seleção de Mídia -->
+    <div class="media-selection-screen" id="mediaSelectionScreen" style="display: none;">
+        <div class="media-selection-content">
+            <div class="app-logo">🎙️</div>
+            <h1 class="app-title">transcribeThis</h1>
+            <p class="app-subtitle">Escolha uma opção para começar</p>
+            
+            <div class="selection-buttons">
+                <button class="selection-btn primary" id="selectFileBtn">
+                    <svg width="32" height="32" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 2a1 1 0 011 1v4h4a1 1 0 110 2H9v4a1 1 0 11-2 0V9H3a1 1 0 110-2h4V3a1 1 0 011-1z"/>
+                    </svg>
+                    <span>Selecione ficheiro áudio (ou vídeo)</span>
+                </button>
+                
+                <button class="selection-btn secondary" id="selectYoutubeBtn">
+                    <svg width="32" height="32" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M15.841 4.8s-.156-1.103-.637-1.587c-.608-.637-1.289-.641-1.603-.678-2.237-.163-5.597-.163-5.597-.163h-.008s-3.359 0-5.597.163c-.314.037-.994.041-1.603.678C.315 3.697.159 4.8.159 4.8S0 6.09 0 7.378v1.203c0 1.289.159 2.578.159 2.578s.156 1.104.637 1.588c.609.637 1.407.617 1.762.684 1.279.122 5.441.159 5.441.159s3.363-.005 5.6-.168c.314-.037.995-.041 1.603-.678.481-.484.637-1.588.637-1.588s.159-1.289.159-2.578V7.378c0-1.288-.159-2.578-.159-2.578zM6.347 10.041V5.278l4.322 2.384-4.322 2.379z"/>
+                    </svg>
+                    <span>Ou vídeo do Youtube</span>
+                </button>
+            </div>
+            
+            <p class="last-file-info" id="lastFileInfo"></p>
+        </div>
+    </div>
+
+    <!-- Modal para URL do YouTube -->
+    <div class="youtube-modal" id="youtubeModal" style="display: none;">
+        <div class="youtube-modal-overlay" id="youtubeModalOverlay"></div>
+        <div class="youtube-modal-content">
+            <button class="youtube-modal-close" id="closeYoutubeModal">✕</button>
+            <h2 class="youtube-modal-title">Enter YouTube video URL:</h2>
+            <input type="text" 
+                   class="youtube-modal-input" 
+                   id="youtubeModalInput" 
+                   placeholder="Cole a URL do vídeo do YouTube aqui">
+            <div class="youtube-modal-buttons">
+                <button class="youtube-modal-btn cancel" id="cancelYoutubeBtn">Cancelar</button>
+                <button class="youtube-modal-btn confirm" id="confirmYoutubeBtn">Carregar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input de arquivo oculto -->
+    <input type="file" id="audioFile" accept="audio/*,video/*" style="display: none;">
+
+    <!-- Aplicação Principal -->
+    <div class="main-app" id="mainApp" style="display: none;">
+        <header class="bx--header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>🎙️transcribeThis</h1>
+                    <button class="change-media-btn" id="changeMediaBtn" title="Trocar mídia">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M13.5 2L15 3.5 13.5 5 12 3.5zM11 4.5L12.5 6 6 12.5 2 13 2.5 9zM1 14.5h14v1.5H1z"/>
+                        </svg>
+                    </button>
+                    <span class="file-name-header" id="fileNameHeader">Nenhum arquivo</span>
+                </div>
+                
+                <audio id="audioPlayer" style="display: none;"></audio>
+
+                <div class="header-controls">
+                    <button class="control-btn-compact" id="backBtn" disabled title="Voltar 1s (F2)">
+                        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 2L2 8l6 6V2zm4 0L6 8l6 6V2z"/>
+                        </svg>
+                    </button>
+                    
+                    <button class="control-btn-compact primary" id="playPauseBtn" disabled title="Play/Pause (F1)">
+                        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" id="playIcon">
+                            <path d="M4 2v12l10-6z"/>
+                        </svg>
+                        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" id="pauseIcon" style="display: none;">
+                            <path d="M5 2h2v12H5zm4 0h2v12H9z"/>
+                        </svg>
+                    </button>
+
+                    <button class="control-btn-compact" id="forwardBtn" disabled title="Avançar 1s (F3)">
+                        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 14l6-6-6-6v12zm-4 0l6-6-6-6v12z"/>
+                        </svg>
+                    </button>
+
+                    <div class="time-display-compact" id="timeDisplay">00:00 / 00:00</div>
+                    
+                    <div class="progress-container-compact">
+                        <input type="range" class="progress-bar-compact" id="progressBar" min="0" max="100" value="0" step="0.1" disabled>
+                    </div>
+                </div>
+
+                <button class="theme-toggle" id="themeToggle" title="Alternar tema">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" id="sunIcon">
+                        <path d="M10 13a3 3 0 100-6 3 3 0 000 6zM10 0a1 1 0 011 1v1a1 1 0 11-2 0V1a1 1 0 011-1zm0 17a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM20 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM3 10a1 1 0 01-1 1H1a1 1 0 110-2h1a1 1 0 011 1zm13.657-5.657a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zm-9.193 9.193a1 1 0 010 1.414l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 0zm9.193 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 011.414-1.414zM4.343 4.343l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 011.414-1.414z"/>
+                    </svg>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" id="moonIcon" style="display: none;">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- Video Player Section - LADO DIREITO -->
+            <div class="video-section-right" id="videoSection" style="display: none;">
+                <div class="video-container">
+                    <video id="videoPlayer" controls></video>
+                    <div id="youtubePlayer"></div>
+                </div>
+                <button class="close-video-btn" id="closeVideoBtn" title="Fechar vídeo">✕</button>
+            </div>
+
+            <div class="editor-section">
+                <textarea id="transcriptionEditor"></textarea>
+            </div>
+        </div>
+
+        <div class="shortcuts-info" id="shortcutsBar">
+            <span><kbd>F1</kbd> Play/Pause</span>
+            <span><kbd>F2</kbd> Voltar 1s</span>
+            <span><kbd>F3</kbd> Avançar 1s</span>
+            <span><kbd>i</kbd> Modo Insert (Vim)</span>
+            <span><kbd>ESC</kbd> Modo Normal (Vim)</span>
+            <button class="shortcuts-close-btn" id="closeShortcutsBtn" title="Fechar atalhos">✕</button>
+        </div>
+        
+        <!-- Botão de ajuda (interrogação) para reabrir atalhos -->
+        <button class="shortcuts-toggle-btn help-btn" id="toggleShortcutsBtn" style="display: none;" title="Mostrar atalhos">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- CodeMirror Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/keymap/vim.min.js"></script>
+    
+    <!-- Custom Scripts -->
+    <script src="js/theme.js"></script>
+    <script src="js/screens.js"></script>
+    <script src="js/editor.js"></script>
+    <script src="js/media-controls.js"></script>
+    <script src="js/keyboard-shortcuts.js"></script>
+    <script src="js/shortcuts-bar.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/transcription-ai.js"></script>
+    
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
