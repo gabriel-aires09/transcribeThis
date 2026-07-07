@@ -1,8 +1,16 @@
 const { app, BrowserWindow, Menu, ipcMain, safeStorage } = require('electron');
 const fs = require('fs');
 const path = require('path');
+const { writeHeapSnapshot } = require('v8');
 
 const secretsPath = path.join(app.getPath('userData'), 'secrets.bin');
+
+let loadURL;
+
+async function initServe() {
+  const { default: serve } = await import('electron-serve');
+  loadURL = serve({ directory: __dirname });
+}
 
 ipcMain.handle('secure-storage:set', (_event, plainText) => {
   if (!safeStorage.isEncryptionAvailable()) {
@@ -36,13 +44,13 @@ function createWindow() {
     },
   });
 
-  win.loadFile('index.html');
+  loadURL(win);
 
   // Remova em produção se quiser esconder o menu padrão do Electron
   Menu.setApplicationMenu(null);
 }
 
-app.whenReady().then(createWindow);
+initServe().then(() => app.whenReady()).then(createWindow);
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

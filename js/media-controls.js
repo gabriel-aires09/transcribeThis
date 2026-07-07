@@ -111,7 +111,8 @@ class MediaController {
             playerVars: {
                 'playsinline': 1,
                 'controls': 1,
-                'rel': 0
+                'rel': 0,
+                'origin': window.location.origin
             },
             events: {
                 'onReady': (event) => this.onYouTubeReady(event),
