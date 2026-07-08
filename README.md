@@ -1,10 +1,10 @@
-# 🎙️ transcribeThis
+<p align="center">
+  <img width="400" alt="Logo do transcribeThis" src="assets/logo.svg">
+</p>
 
 Um aplicativo simples para transcrever áudios e vídeos manualmente — como uma
 reunião, entrevista, aula ou podcast — direto na sua tela, sem precisar
 alternar entre o player de mídia e um editor de texto separado.
-
-Inspirado no [oTranscribe](https://github.com/oTranscribe/oTranscribe).
 
 ## Para que serve
 
@@ -18,7 +18,24 @@ Também é possível pedir para o próprio aplicativo transcrever o áudio
 automaticamente usando Inteligência Artificial (Whisper, da OpenAI), caso você
 prefira revisar um texto pronto em vez de digitar tudo do zero.
 
-## Como usar
+## 📋 Características
+
+<p align="center">
+	<img width="800" 
+		alt="Tela principal do aplicativo transcribeThis"
+		src="assets/screen-example.png">
+</p>
+
+- ✅ Suporte a arquivos de áudio e vídeo
+- ✅ Controles de reprodução (Play/Pause, Voltar, Avançar)
+- ✅ Barra de progresso interativa
+- ✅ Atalhos de teclado personalizados
+- ✅ Editor de texto com Vim bindings completo
+- ✅ Tema claro e escuro
+- ✅ Interface profissional com Carbon Design System da IBM
+- ✅ Transcrição automática com Inteligência Artificial
+
+## 🚀 Como Usar
 
 1. Abra o aplicativo.
 2. Clique em **"Selecionar Arquivo de Áudio/Vídeo"** e escolha o arquivo no
@@ -29,7 +46,7 @@ prefira revisar um texto pronto em vez de digitar tudo do zero.
    automaticamente, sem precisar clicar em nenhum botão de "salvar".
 5. Quando terminar, exporte o texto (veja "Funcionalidades extras" abaixo).
 
-## Atalhos de teclado
+## 🎹 Atalhos de Teclado
 
 ### Controle de reprodução
 
@@ -56,14 +73,14 @@ para quem já está acostumado com ele:
 Se você não conhece o Vim, não se preocupe: também é possível simplesmente
 clicar no campo de texto e digitar normalmente.
 
-## Funcionalidades extras
+## 💡 Funcionalidades Avançadas
 
 ### Tema claro/escuro
 
 Clique no ícone de sol/lua no canto superior direito para alternar entre os
 temas claro e escuro.
 
-### Transcrição automática com IA
+### Transcrição automática com IA 🤖
 
 O aplicativo pode enviar o áudio para o serviço Whisper, da OpenAI, e
 preencher o texto automaticamente. Para usar esse recurso, você precisa
@@ -83,7 +100,14 @@ getStats()               // mostra estatísticas (nº de palavras, caracteres et
 clearTranscription()     // limpa todo o texto digitado
 ```
 
+## 📝 Inspiração
+
+Projeto inspirado no [oTranscribe](https://github.com/oTranscribe/oTranscribe), com melhorias e funcionalidades adicionais.
+
 ## Licença
 
 Projeto de código aberto para uso educacional e pessoal.
 
+## 🤝 Contribuições
+
+Sugestões e melhorias são bem-vindas!
