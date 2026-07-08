@@ -4,6 +4,35 @@
 > (`main.js`, `preload.js`, `js/media-controls.js`). Aplique os diffs abaixo
 > manualmente, conforme a regra do `CLAUDE.md`.
 
+> ## ⚠️ Atualização (2026-07-08): a correção da seção 5 (`electron-serve`) foi
+> aplicada e o Erro 153 **continua** ocorrendo — agora confirmado também no
+> AppImage do Linux, além do Windows.
+>
+> **Nova causa raiz identificada:** o problema nunca foi "estar em `file://`"
+> por si só — é que o YouTube IFrame API exige um **esquema literalmente
+> `http:` ou `https:`**. O script `www-widgetapi.js`, carregado por
+> [`index.html:202`](../../index.html#L202) a partir de
+> `https://www.youtube.com/iframe_api`, faz uma checagem estrita de
+> `window.location.protocol` internamente. Qualquer esquema fora dessa lista
+> — `file:` **ou** um protocolo customizado registrado via
+> `protocol.registerSchemesAsPrivileged` (como o `app://` do
+> `electron-serve`, mesmo com `standard: true`) — cai no mesmo
+> **"Erro 153"**.
+>
+> Isso explica por que:
+> - A correção com `electron-serve` (seção 5, já aplicada em `main.js` no
+>   commit `8e3ab16`) não resolveu — trocou `file:` por `app:`, mas nenhum
+>   dos dois é `http:`/`https:`.
+> - O erro é idêntico no Linux (AppImage) e no Windows — a causa é o
+>   protocolo da página, não o sistema operacional.
+>
+> **A correção que de fato resolve é a da seção 3 abaixo** (servidor HTTP
+> local em `http://127.0.0.1:<porta>`, só com o módulo nativo `http` do
+> Node — sem novas dependências), que já estava documentada neste arquivo
+> mas não foi a opção escolhida. A seção 5 (`electron-serve`) deve ser
+> revertida. Diff completo de reversão + aplicação na seção **"6. Ação
+> recomendada agora"**, ao final deste documento.
+
 ## 1. Sintoma
 
 Ao usar a função de vídeo do YouTube no app empacotado para Windows:
@@ -304,3 +333,162 @@ automaticamente, então nenhuma mudança é necessária na lista `files`.
 | Linhas em `main.js` | ~25 (servidor + mime types) | ~3 |
 | Origem final | `http://127.0.0.1:<porta>` | `app://-` |
 | Manutenção | Por sua conta (mime types, erros) | Delegada ao pacote |
+| **Resolve o Erro 153?** | **Sim** (protocolo é `http:`) | **Não** (protocolo é `app:`, rejeitado pelo YouTube) |
+
+## 6. Ação recomendada agora: reverter para o servidor HTTP local
+
+O `main.js` atual do projeto já está no estado da seção 5 (`electron-serve`,
+commit `8e3ab16`) e também já ganhou, desde então, os handlers de
+`secure-storage` (`ipcMain.handle`). O diff abaixo parte do **`main.js`
+atual** (não do estado original da seção 3) para não perder esse código.
+
+### 6.1. Diff em `main.js` (estado atual → servidor HTTP local)
+
+```diff
+ const { app, BrowserWindow, Menu, ipcMain, safeStorage } = require('electron');
+ const fs = require('fs');
+ const path = require('path');
++const http = require('http');
+ const { writeHeapSnapshot } = require('v8');
+
+ const secretsPath = path.join(app.getPath('userData'), 'secrets.bin');
+
+-let loadURL;
+-
+-async function initServe() {
+-  const { default: serve } = await import('electron-serve');
+-  loadURL = serve({ directory: __dirname });
+-}
++const MIME_TYPES = {
++  '.html': 'text/html',
++  '.js': 'text/javascript',
++  '.css': 'text/css',
++  '.svg': 'image/svg+xml',
++  '.png': 'image/png',
++  '.ico': 'image/x-icon',
++};
++
++function startLocalServer() {
++  return new Promise((resolve) => {
++    const server = http.createServer((req, res) => {
++      const filePath = path.join(__dirname, decodeURIComponent(req.url.split('?')[0]));
++      fs.readFile(filePath, (err, data) => {
++        if (err) {
++          res.writeHead(404);
++          res.end('Not found');
++          return;
++        }
++        const ext = path.extname(filePath);
++        res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
++        res.end(data);
++      });
++    });
++    server.listen(0, '127.0.0.1', () => resolve(server.address().port));
++  });
++}
+
+ ipcMain.handle('secure-storage:set', (_event, plainText) => {
+   if (!safeStorage.isEncryptionAvailable()) {
+     throw new Error('Criptografia nativa não disponível neste sistema.');
+   }
+   const encrypted = safeStorage.encryptString(plainText);
+   fs.writeFileSync(secretsPath, encrypted);
+ });
+
+ ipcMain.handle('secure-storage:get', () => {
+   if (!fs.existsSync(secretsPath)) return null;
+   const encrypted = fs.readFileSync(secretsPath);
+   return safeStorage.decryptString(encrypted);
+ });
+
+ ipcMain.handle('secure-storage:clear', () => {
+   if (fs.existsSync(secretsPath)) fs.unlinkSync(secretsPath);
+ });
+
+-function createWindow() {
++async function createWindow() {
+   const win = new BrowserWindow({
+     width: 1400,
+     height: 900,
+     minWidth: 900,
+     minHeight: 600,
+     icon: path.join(__dirname, 'assets', 'favicon.svg'),
+     webPreferences: {
+       preload: path.join(__dirname, 'preload.js'),
+       contextIsolation: true,
+       nodeIntegration: false,
+     },
+   });
+
+-  loadURL(win);
++  const port = await startLocalServer();
++  win.loadURL(`http://127.0.0.1:${port}/index.html`);
+
+   // Remova em produção se quiser esconder o menu padrão do Electron
+   Menu.setApplicationMenu(null);
+ }
+
+-initServe().then(() => app.whenReady()).then(createWindow);
++app.whenReady().then(createWindow);
+
+ app.on('window-all-closed', () => {
+   if (process.platform !== 'darwin') app.quit();
+ });
+
+ app.on('activate', () => {
+   if (BrowserWindow.getAllWindows().length === 0) createWindow();
+ });
+```
+
+> **Por que `listen(0, '127.0.0.1', ...)`:** porta `0` pede ao SO uma porta
+> livre automaticamente (evita conflito com outro processo). `'127.0.0.1'`
+> (em vez de `'localhost'` ou omitido) evita depender de resolução DNS local
+> e garante que o servidor só aceita conexões da própria máquina.
+>
+> **Por que servir só arquivos dentro de `__dirname`:** o app é local e
+> empacotado, sem input externo controlando `req.url` — quem "navega" é
+> sempre o próprio `index.html` pedindo seus próprios assets
+> (`/js/app.js`, `/css/styles.css`, etc.), então não há necessidade de
+> validação extra de path traversal aqui.
+
+### 6.2. Diff em `package.json` — remover a dependência `electron-serve`
+
+Como o servidor HTTP local usa só o módulo nativo `http` do Node, a
+dependência `electron-serve` deixa de ser usada e pode ser removida
+(confirme com o usuário antes de rodar `npm uninstall`, já que é uma
+mudança de dependências):
+
+```diff
+   "devDependencies": {
+     "electron": "^43.0.0",
+     "electron-builder": "^26.15.3"
+   },
+-  "dependencies": {
+-    "electron-serve": "^3.0.1"
+-  },
+```
+
+Depois de editar o `package.json` manualmente, rodar:
+
+```bash
+npm uninstall electron-serve
+```
+
+### 6.3. `js/media-controls.js` — nenhuma mudança necessária
+
+O parâmetro `'origin': window.location.origin` em `playerVars`
+([`js/media-controls.js:115`](../../js/media-controls.js#L115)) já está
+presente e continua correto — com a mudança acima, `window.location.origin`
+passa a ser `http://127.0.0.1:<porta>`, um valor que o YouTube aceita.
+
+### 6.4. Testando
+
+1. Aplicar os diffs de `main.js` e `package.json` (seções 6.1 e 6.2)
+   manualmente, depois `npm uninstall electron-serve`.
+2. `npm start` → abrir DevTools (`Ctrl+Shift+I`) → aba **Console** → digitar
+   `window.location.href` → deve começar com `http://127.0.0.1:`.
+3. Colar uma URL do YouTube e carregar o vídeo → deve reproduzir sem o
+   Erro 153.
+4. Gerar os instaladores (`npm run dist`) e repetir o teste no `.AppImage`
+   (Linux) e no `.exe` (Windows) — os dois devem parar de mostrar o erro,
+   já que a causa (protocolo da página) é a mesma nas duas plataformas.

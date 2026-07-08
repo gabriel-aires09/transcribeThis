@@ -1,15 +1,44 @@
 const { app, BrowserWindow, Menu, ipcMain, safeStorage } = require('electron');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 const { writeHeapSnapshot } = require('v8');
 
 const secretsPath = path.join(app.getPath('userData'), 'secrets.bin');
+//
+// let loadURL;
+//
+// async function initServe() {
+//   const { default: serve } = await import('electron-serve');
+//   loadURL = serve({ directory: __dirname });
+// }
 
-let loadURL;
+const MIME_TYPES = {
+  '.html': 'text/html',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.ico': 'image/x-icon',
+};
 
-async function initServe() {
-  const { default: serve } = await import('electron-serve');
-  loadURL = serve({ directory: __dirname });
+function startLocalServer() {
+  return new Promise((resolver) => {
+    const server = http.createServer((req, res) => {
+      const filePath = path.join(__dirname, decodeURIComponent(req.url.split('?')[0]));
+      fs.readFile(filePath, (err, data) => {
+        if (err) {
+          res.writeHead(404);
+          res.end('Not found');
+          return;
+        }
+        const ext = path.extname(filePath);
+        res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
+        res.end(data);
+      });
+    });
+    server.listen(0, '127.0.0.1', () => resolve(server.address().port));
+  });
 }
 
 ipcMain.handle('secure-storage:set', (_event, plainText) => {
@@ -30,7 +59,7 @@ ipcMain.handle('secure-storage:clear', () => {
   if (fs.existsSync(secretsPath)) fs.unlinkSync(secretsPath);
 });
 
-function createWindow() {
+async function createWindow() {
   const win = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -44,13 +73,15 @@ function createWindow() {
     },
   });
 
-  loadURL(win);
+  const port = await startLocalServer();
+  win.loadURL(`http://127.0.0.1:${port}/index.html`);
+
 
   // Remova em produção se quiser esconder o menu padrão do Electron
   Menu.setApplicationMenu(null);
 }
 
-initServe().then(() => app.whenReady()).then(createWindow);
+app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
