@@ -102,11 +102,6 @@ class TranscriptionAI {
                        Obtenha sua chave em: <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
                     </p>
                     
-                    <p class="ai-settings-info">
-                        Custo: $0.006 por minuto de áudio<br>
-                        Suporta português e 98 outros idiomas<br>
-                        Modelo: Whisper (OpenAI)
-                    </p>
                 </div>
                 
                 <div class="ai-modal-buttons">
