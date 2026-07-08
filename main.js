@@ -23,7 +23,7 @@ const MIME_TYPES = {
 };
 
 function startLocalServer() {
-  return new Promise((resolver) => {
+  return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
       const filePath = path.join(__dirname, decodeURIComponent(req.url.split('?')[0]));
       fs.readFile(filePath, (err, data) => {
